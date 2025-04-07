@@ -6,6 +6,22 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
+# 检测系统是否为Debian
+if ! grep -qi 'debian' /etc/os-release; then
+    echo "此脚本仅适用于Debian系统"
+    exit 1
+fi
+
+# 获取Debian版本
+DEBIAN_VERSION=$(grep 'VERSION_CODENAME' /etc/os-release | cut -d'=' -f2)
+
+# 0. 对于Debian 11(bullseye)，更新源中的bullseye/updates为bullseye-security
+if [ "$DEBIAN_VERSION" = "bullseye" ]; then
+    echo "检测到Debian 11(bullseye)，正在调整安全更新源..."
+    sed -i 's/bullseye\/updates/bullseye-security/g' /etc/apt/sources.list
+    sed -i 's/bullseye-updates/bullseye-security/g' /etc/apt/sources.list
+fi
+
 # 1. 系统更新
 echo "正在执行系统更新..."
 apt update && apt upgrade -y && apt autoclean -y
@@ -24,9 +40,15 @@ systemctl restart ssh
 # 4. 配置SSH公钥
 echo "正在配置SSH公钥..."
 mkdir -p /root/.ssh
-echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCtomYPaSsMNHVPHp0gEBi73U803BFI2xBYuzmJtDnJg69fFZ/l4Y3FXqMGtNsr4qXBQib7bNl05rsDgktTqoogzYECDgnvceO2zgFkYGw4fo5yFg7F1RThgb11n5kpfbiDvEf/v34jYKjnibkM21gS3KIeHio+j2hsCRqD3119uqN+mNtCEgou4g/r2OPG8RDJ0VN6TP+v5jhFAW4/t3GAzLS3gFqHoxzt7EzVSuzLcoX9oObz181dr402ArWhiT8SW6VCqVUF9TpLtp2Zc41LktZdZSrfYh2GqXR15E1wo5tQcaj//x3Ua1GcGj7vw2YEgysYvZvPxePs2UsL+5j/UyWZGHOplWR32dseCTTzBrJBboGEULc/1I9pCr8sMmWO2DwNg40YOgE5lTvGmuhQ8hTC1hq76JG/zzAT/mXCWnxTx3LJuQrvg56G0TTG8HPfQuJ2OLrKYIGWrfyeXqRKgQ03ORppoJtwzn5Utkgzrdh82d8qwnIdFTcNOstmsts= zxw1062225323@gmail.com' >> /root/.ssh/authorized_keys
+echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCtomYPaSsMNHVPHp0gEBi73U803BFI2xBYuzmJtDnJg69fFZ/l4Y3FXqMGtNsr4qXBQib7bNl05rsDgktTqoogzYECDgnvceO2zgFkYGw4fo5yFg7F1RThgb11n5kpfbiDvEf/v34jYKjnibkM21gS3KIeHio+j2hsCRqD3119uqN+mNtCEgou4g/r2OPG8RDJ0VN6TP+v5jhFAW4/t3GAzLS3gFqHoxzt7EzVSuzLcoX9oObz181dr402ArWhiT8SW6VCqVUF9TpLtp2Zc41LktZdZSrfYh2GqXR15E1wo5tQcaj//x3Ua1GcGj7vw2YEgysYvZvPxePs2UsL+5j/UyWZGHOplWR32dseCTTzBrJBboGEULc/1I9pCr8sMmWO2DwNg40YOgE5lTvGmuhQ8hTC1hq76JG/zzAT/mXCWnxTx3LJuQrvg56G0TTG8HPfQuJ2OLrKYIGWrfyeXqRKgQ03ORppoJtwzn5Utkgzrdh82d8qwnIdFTcNOstmsts= zxw1062225323@gmail.com' > /root/.ssh/authorized_keys
+
+# 确保正确的权限设置
 chmod 700 /root/.ssh
 chmod 600 /root/.ssh/authorized_keys
+chown -R root:root /root/.ssh
+
+# 重启SSH服务（确保使用systemctl）
+systemctl restart sshd  # Debian 12使用sshd而非ssh
 
 # 5. 启用BBR
 echo "正在启用BBR拥塞控制..."
