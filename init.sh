@@ -35,7 +35,6 @@ echo "正在配置SSH服务..."
 sed -i -e 's/^#*\(PermitRootLogin\s*\).*$/\1yes/' \
        -e 's/^#*\(PubkeyAuthentication\s*\).*$/\1yes/' \
        /etc/ssh/sshd_config
-systemctl restart ssh
 
 # 4. 配置SSH公钥
 echo "正在配置SSH公钥..."
