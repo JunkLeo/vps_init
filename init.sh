@@ -18,8 +18,16 @@ DEBIAN_VERSION=$(grep 'VERSION_CODENAME' /etc/os-release | cut -d'=' -f2)
 # 0. 对于Debian 11(bullseye)，更新源中的bullseye/updates为bullseye-security
 if [ "$DEBIAN_VERSION" = "bullseye" ]; then
     echo "检测到Debian 11(bullseye)，正在调整安全更新源..."
-    sed -i 's/bullseye\/updates/bullseye-security/g' /etc/apt/sources.list
-    sed -i 's/bullseye-updates/bullseye-security/g' /etc/apt/sources.list
+   cat > /etc/apt/sources.list << EOF
+   deb https://deb.debian.org/debian/ bullseye main contrib non-free
+   deb-src https://deb.debian.org/debian/ bullseye main contrib non-free
+   deb https://deb.debian.org/debian/ bullseye-updates main contrib non-free
+   deb-src https://deb.debian.org/debian/ bullseye-updates main contrib non-free
+   deb https://deb.debian.org/debian/ bullseye-backports main contrib non-free
+   deb-src https://deb.debian.org/debian/ bullseye-backports main contrib non-free
+   deb https://deb.debian.org/debian-security/ bullseye-security main contrib non-free
+   deb-src https://deb.debian.org/debian-security/ bullseye-security main contrib non-free
+   EOF
 fi
 
 # 1. 系统更新
