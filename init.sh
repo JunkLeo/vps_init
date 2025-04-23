@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 检查是否为root用户
-if [ "$(id -u)" != "0" ]; then
-   echo "此脚本必须以root用户身份运行" 1>&2
+if [ "$(id -u)" -ne 0 ]; then
+   echo "此脚本必须以root用户身份运行" >&2
    exit 1
 fi
 
@@ -18,16 +18,16 @@ DEBIAN_VERSION=$(grep 'VERSION_CODENAME' /etc/os-release | cut -d'=' -f2)
 # 0. 对于Debian 11(bullseye)，更新源中的bullseye/updates为bullseye-security
 if [ "$DEBIAN_VERSION" = "bullseye" ]; then
     echo "检测到Debian 11(bullseye)，正在调整安全更新源..."
-   cat > /etc/apt/sources.list << EOF
-   deb https://deb.debian.org/debian/ bullseye main contrib non-free
-   deb-src https://deb.debian.org/debian/ bullseye main contrib non-free
-   deb https://deb.debian.org/debian/ bullseye-updates main contrib non-free
-   deb-src https://deb.debian.org/debian/ bullseye-updates main contrib non-free
-   deb https://deb.debian.org/debian/ bullseye-backports main contrib non-free
-   deb-src https://deb.debian.org/debian/ bullseye-backports main contrib non-free
-   deb https://deb.debian.org/debian-security/ bullseye-security main contrib non-free
-   deb-src https://deb.debian.org/debian-security/ bullseye-security main contrib non-free
-   EOF
+    cat > /etc/apt/sources.list << EOF
+deb https://deb.debian.org/debian/ bullseye main contrib non-free
+deb-src https://deb.debian.org/debian/ bullseye main contrib non-free
+deb https://deb.debian.org/debian/ bullseye-updates main contrib non-free
+deb-src https://deb.debian.org/debian/ bullseye-updates main contrib non-free
+deb https://deb.debian.org/debian/ bullseye-backports main contrib non-free
+deb-src https://deb.debian.org/debian/ bullseye-backports main contrib non-free
+deb https://deb.debian.org/debian-security/ bullseye-security main contrib non-free
+deb-src https://deb.debian.org/debian-security/ bullseye-security main contrib non-free
+EOF
 fi
 
 # 1. 系统更新
@@ -55,15 +55,17 @@ chmod 600 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh
 
 # 重启SSH服务（确保使用systemctl）
-systemctl restart sshd  # Debian 12使用sshd而非ssh
+systemctl restart sshd
 
 # 5. 启用BBR
 echo "正在启用BBR拥塞控制..."
-echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+{
+  echo "net.core.default_qdisc=fq"
+  echo "net.ipv4.tcp_congestion_control=bbr"
+} >> /etc/sysctl.conf
 sysctl -p
 
-# 6. 安装配置Zsh
+# 6. 安装Zsh及oh-my-zsh
 echo "正在安装Zsh及其组件..."
 apt install -y zsh
 chsh -s $(which zsh) root
@@ -91,7 +93,6 @@ wget -q https://raw.githubusercontent.com/JunkLeo/vps_init/refs/heads/master/leo
 
 # 9. 替换.zshrc
 echo "正在配置.zshrc..."
-rm -f /root/.zshrc
 wget -q https://raw.githubusercontent.com/JunkLeo/vps_init/refs/heads/master/.zshrc \
     -O /root/.zshrc
 
@@ -103,7 +104,7 @@ while true; do
         read -p "是否确认？[Y/n] " confirm
         case $confirm in
             [yY]|"" )
-                hostnamectl set-hostname $hostname
+                hostnamectl set-hostname "$hostname"
                 echo "主机名已成功修改"
                 break
                 ;;
